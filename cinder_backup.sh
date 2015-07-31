@@ -42,9 +42,51 @@ fi
 echo "Volume done at `date +%Y%m%d-%H%m%S`"
 }
 
+# Keep at least N backups, and delete only backups older than X days
+function backup_rotate() {
+  echo '---------'
+  backup_files_ok=` find $BACKUP_DEST/data/ -name 'volume-'$vol_id'\.[0-9]*-[0-9]*\.raw'`
+  backup_files_err=` find $BACKUP_DEST/data/ -name 'volume-'$vol_id'\.[0-9]*-[0-9]*\.raw\.ERROR'`
+  echo -e "backup_files_ok \n$backup_files_ok"
+  echo -e "backup_files_err \n$backup_files_err"
+  # keep at least N latest backups, from the _ok list only.
+  backup_no_delete=`echo "$backup_files_ok" | sort | tail -n $ROTATION_MIN_COUNT`
+  echo -e "backup_no_delete \n$backup_no_delete"
+  # backups to delete
+  backup_files_ok_delete=` find $BACKUP_DEST/data/ -name 'volume-'$vol_id'\.[0-9]*-[0-9]*\.raw' -mtime +$ROTATION_MIN_AGE`
+  backup_files_err_delete=` find $BACKUP_DEST/data/ -name 'volume-'$vol_id'\.[0-9]*-[0-9]*\.raw\.ERROR' -mtime +$ROTATION_MIN_AGE`
+  echo -e "backup_files_ok_delete \n$backup_files_ok_delete"
+  echo -e "backup_files_err_delete \n$backup_files_err_delete"
+  echo '---------'
+  for ff in $backup_files_ok_delete $backup_files_err_delete
+  do
+    #file_ts=`echo $ff | sed -e "s|^$BACKUP_DEST/data/volume-$vol_id.||" -e "s|.raw$||" -e "s|.raw.ERROR$||"`
+    echo "$backup_no_delete" | grep -q "$ff"
+    grep_ret=$?
+    if [ "$grep_ret" == "0" ]
+    then
+      echo "  keep $ff (ROTATION_MIN_COUNT)"
+    else
+      echo "  delete $ff"
+      /bin/rm "$ff"
+    fi
+  done
+}
+
+
+function print_conf() {
+echo '------------------------------------------'
+echo "Conf from $BACKUP_CONF"
+echo "NOVARC_FILE		$NOVARC_FILE"
+echo "BACKUP_DEST 		$BACKUP_DEST"
+echo "ROTATION_MIN_COUNT	$ROTATION_MIN_COUNT"
+echo "ROTATION_MIN_AGE		$ROTATION_MIN_AGE [days]"
+}
+
 
 function main() {
 echo "Start backup at `date +%Y%m%d-%H%m%S`"
+print_conf
 
 # source and test NOVARC_FILE
 source $NOVARC_FILE
@@ -72,7 +114,7 @@ for vol_id in $BACKUP_VOLUMES
 do
   echo '------------------------------------------'
   backup_one_volume 2>&1 | tee "$BACKUP_DEST/log/volume-$vol_id.$DATE.log"
-  # TODO rotate backups
+  backup_rotate
 done
 # show free disk
 echo '------------------------------------------'
