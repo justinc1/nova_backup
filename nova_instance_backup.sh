@@ -12,6 +12,12 @@ then
 fi
 
 
+# fix invalid/annoying characters
+function string_to_filename() {
+    echo "$1" | sed 's/[\`=\;:<>/?~!@#$%^&*()+ ]/-/g'
+}
+
+
 function main() {
 error_count=0
 echo '------------------------------------'
@@ -23,7 +29,7 @@ nova_show=`nova show $INST_UUID`
 virsh_host=`echo "$nova_show" | grep 'OS-EXT-SRV-ATTR:hypervisor_hostname' | sed 's/|/ /g' | awk '{print $2}'`
 virsh_dom=`echo "$nova_show" | grep 'OS-EXT-SRV-ATTR:instance_name' | sed 's/|/ /g' | awk '{print $2}'`
 virsh_state=`echo "$nova_show" | grep 'OS-EXT-STS:vm_state' | sed 's/|/ /g' | awk '{print $2}'`
-
+nova_name=`echo "$nova_show" | grep '^| name ' | sed -e 's/| name //' -e 's/|//g' -e 's/ //g'`
 nova list --all-tenants | grep "$INST_UUID"
 echo "nova instance_uuid $INST_UUID -> host $virsh_host, domain $virsh_dom"
 if [ "$virsh_state" != "stopped" ]
@@ -32,7 +38,8 @@ then
   error_count=$(( $error_count + 1 ))
 fi
 
-ssh -i $SSH_KEY root@$virsh_host $VIRSH_DOMAIN_BACKUP_PATH $virsh_dom
+backup_prefix="nova-$INST_UUID.`string_to_filename $nova_name`"
+ssh -i $SSH_KEY root@$virsh_host $VIRSH_DOMAIN_BACKUP_PATH $virsh_dom $backup_prefix
 ssh_ret=$?
 if [ "$ssh_ret" != "0" ]
 then
