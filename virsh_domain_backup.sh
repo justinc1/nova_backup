@@ -4,11 +4,14 @@
 # VM will be shutoff.
 
 #set -x
+SRCDIR=`readlink -f $0`
+SRCDIR=`dirname $SRCDIR`
+source $SRCDIR/settings.sh
+source $SRCDIR/local_settings.sh
 
 DOM=$1
 BACKUP_PREFIX=$2
 DATE=`date +%Y%m%d-%H%M%S`
-BACKUP_DEST='/var/lib/nova/justin-data'
 
 error_count="0"
 

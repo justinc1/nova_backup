@@ -1,9 +1,9 @@
 #!/bin/bash
 
-NOVARC=/root/openrc
-LOGIFLE=/var/lib/nova/justin-data/nova_instance_backup.log
-VIRSH_DOMAIN_BACKUP_PATH=/root/justinc/virsh_domain_backup.sh
-SSH_KEY=~/.ssh/nova_backup_user
+SRCDIR=`readlink -f $0`
+SRCDIR=`dirname $SRCDIR`
+source $SRCDIR/settings.sh
+source $SRCDIR/local_settings.sh
 
 if [ -z "$1" ]
 then
@@ -39,7 +39,7 @@ then
 fi
 
 backup_prefix="nova-$INST_UUID.`string_to_filename $nova_name`"
-ssh -i $SSH_KEY root@$virsh_host $VIRSH_DOMAIN_BACKUP_PATH $virsh_dom $backup_prefix
+ssh -i $SSH_KEY $SSH_OPT root@$virsh_host $VIRSH_DOMAIN_BACKUP_PATH $virsh_dom $backup_prefix
 ssh_ret=$?
 if [ "$ssh_ret" != "0" ]
 then
