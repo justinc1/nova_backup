@@ -21,6 +21,8 @@ sync
 dom_disk_devs=`virsh domblklist $DOM | sed -e '/^Target.*Source$/d' -e '/^-*$/d' | awk '{print $1}'`
 dom_blklist=`virsh domblklist $DOM | sed -e '/^Target.*Source$/d' -e '/^-*$/d'`
 dom_disk_devs=`echo $dom_disk_devs`
+# if domain in suspended state, backup the .save file
+dom_save_file="/var/lib/libvirt/qemu/save/$DOM.save"
 #
 # Domain should be be already stopped in nova.
 # Othervise, nova might notice VM in shutdown state, and than after virsh start, nova will issue shutdown.
@@ -46,6 +48,12 @@ do
     mv $BACKUP_DEST/$BACKUP_PREFIX.$DATE.$disk_dev.qcow2 $BACKUP_DEST/$BACKUP_PREFIX.$DATE.$disk_dev.qcow2.ERROR
   fi
 done
+# copy the .save file
+if [ -f "$dom_save_file" ]
+then
+  echo "Backing up save $dom_save_file"
+  /bin/cp "$dom_save_file" $BACKUP_DEST/$BACKUP_PREFIX.$DATE.save
+fi
 # leave VM in shutoff state
 # virsh resume $DOM
 
