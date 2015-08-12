@@ -7,3 +7,8 @@ LOGIFLE=/var/lib/nova/justin-data/nova_instance_backup.log
 VIRSH_DOMAIN_BACKUP_PATH=/root/justinc/virsh_domain_backup.sh
 # SSH_KEY=~/.ssh/nova_backup_user
 # SSH_OPT=''
+
+# local config for host_backup.sh
+HOST_BACKUP_DEST='/var/lib/nova/justin-host-data'
+MYSQL_ROOT_PASS=real_root_pass
+
