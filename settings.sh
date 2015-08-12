@@ -13,3 +13,5 @@ SSH_OPT=''
 HOST_BACKUP_DEST='/var/lib/nova/justin-host-data'
 MYSQL_ROOT_PASS=root_pass
 
+# ldap backup
+LDAP_BASE="dc=example,dc=com"

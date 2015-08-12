@@ -21,6 +21,7 @@ MYSQL="/usr/bin/mysql"
 MYSQL_EXCLUDE_DB="Database information_schema performance_schema"
 
 function backup_git_repos() {
+  echo "-------------------------------------------------------------"
   /bin/ls -la /root/git-repos/ > $DESTD/log/git-repos-list.$DATE.txt
   all_repos=`find /root/git-repos/ -type l -or -type d`
   all_repos=`echo $all_repos`
@@ -51,6 +52,7 @@ function backup_git_repos() {
 
 
 function backup_mysql() {
+  echo "-------------------------------------------------------------"
   if [ -z "`which mysql`" ]
   then
     echo "INFO: mysql binary not found, so likely there is no DB to backup."
@@ -81,9 +83,39 @@ function backup_mysql() {
 }
 
 
-function ldap_backup() {
-  aa=1
+function backup_ldap() {
+  echo "-------------------------------------------------------------"
+  if [ ! -d /etc/ldap/slapd.d/ ]
+  then
+    echo "INFO: no /etc/ldap/slapd.d dir, so no slapd here."
+    return
+  fi
+  OUTDIR_DAY=$DESTD/day/ldap
+  OUTDIR_WEEK=$DESTD/week/ldap
+  [ ! -d $OUTDIR_DAY ] && mkdir $OUTDIR_DAY
+  [ ! -d $OUTDIR_WEEK ] && mkdir $OUTDIR_WEEK
+
+  # LDAP_BASE='dc=example,dc=com'
+  ldap_postfix=`echo $LDAP_BASE | sed -e 's/dc=//g' -e 's/,/-/g'`
+  # backup DIT data, DIT config and filesystem config (/etc/ldap/)
+  DIT_DATA="$OUTDIR_DAY/`hostname`-$DATE-${ldap_postfix}.dit-data.ldif"
+  DIT_CONFIG="$OUTDIR_DAY/`hostname`-$DATE-${ldap_postfix}.dit-config.ldif"
+  FS_CONFIG="$OUTDIR_DAY/`hostname`-$DATE-${ldap_postfix}.fs-config.tar.gz"
+  echo "  DIT_DATA=$DIT_DATA"
+  echo "  DIT_CONFIG=$DIT_CONFIG"
+  echo "  FS_CONFIG=$FS_CONFIG"
+
+  CMD="slapcat -b $LDAP_BASE -l $DIT_DATA"
+  echo EXEC $CMD
+  $CMD
+  CMD="slapcat -b cn=config -l $DIT_CONFIG"
+  echo EXEC $CMD
+  $CMD
+  CMD="$TAR -czf $FS_CONFIG /etc/ldap/ /etc/ldapscripts"
+  echo EXEC $CMD
+  $CMD
 }
+
 
 function main() {
   echo "Backup start `date`"
@@ -96,6 +128,7 @@ function main() {
 
   backup_git_repos
   backup_mysql
+  backup_ldap
   echo "Backup stop `date`"
 }
 
