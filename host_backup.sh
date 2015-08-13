@@ -18,6 +18,7 @@ RSYNC="/usr/bin/rsync -rav --delete"
 TAR="/bin/tar"
 MYSQLDUMP="/usr/bin/mysqldump"
 MYSQL="/usr/bin/mysql"
+SLAPCAT="/usr/sbin/slapcat"
 MYSQL_EXCLUDE_DB="Database information_schema performance_schema"
 
 function backup_git_repos() {
@@ -105,10 +106,10 @@ function backup_ldap() {
   echo "  DIT_CONFIG=$DIT_CONFIG"
   echo "  FS_CONFIG=$FS_CONFIG"
 
-  CMD="slapcat -b $LDAP_BASE -l $DIT_DATA"
+  CMD="$SLAPCAT -b $LDAP_BASE -l $DIT_DATA"
   echo EXEC $CMD
   $CMD
-  CMD="slapcat -b cn=config -l $DIT_CONFIG"
+  CMD="$SLAPCAT -b cn=config -l $DIT_CONFIG"
   echo EXEC $CMD
   $CMD
   CMD="$TAR -czf $FS_CONFIG /etc/ldap/ /etc/ldapscripts"
